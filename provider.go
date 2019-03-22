@@ -8,15 +8,20 @@ import (
 	"strings"
 )
 
+// Backend is an interface for accessing images and the folders in
+// which they are stored. Access is read only.
 type Backend interface {
 	ReadDir(string) ([]os.FileInfo, error)
 	Open(string) (io.Reader, error)
 }
 
+// Provider is used to fetch Albums and Images from a Backend
 type Provider struct {
 	Backend
 }
 
+// Album retreives an Album from the backend, or returns an error if
+// it is unable to.
 func (p Provider) Album(path string) (*Album, error) {
 	files, err := p.ReadDir(path)
 	if err != nil {
@@ -39,6 +44,9 @@ func (p Provider) Album(path string) (*Album, error) {
 	}, nil
 }
 
+// Image returns an io.Reader for an image stored in the backend at the
+// given path. Any attempt to read anything other than an image will result
+// in an error.
 func (p Provider) Image(path string) (io.Reader, error) {
 	if !isImage(path) {
 		return nil, errors.New("not an image")
