@@ -12,7 +12,7 @@ import (
 // files and and subdirectories of the supplied directory.
 type FsBackend string
 
-// Readdir reads the directory at the supplied path and returns a list of
+// ReadDir reads the directory at the supplied path and returns a list of
 // directory entries sorted by filename.
 func (backend FsBackend) ReadDir(path string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(backend.Path(path))
