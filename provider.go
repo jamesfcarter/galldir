@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // Backend is an interface for accessing images and the folders in
@@ -29,7 +28,7 @@ func (p Provider) Album(path string) (*Album, error) {
 	}
 	images := make([]Image, 0, len(files))
 	for _, file := range files {
-		if !file.IsDir() && !isImage(file.Name()) {
+		if !file.IsDir() && !IsImage(file.Name()) {
 			continue
 		}
 		images = append(images, Image{
@@ -48,20 +47,8 @@ func (p Provider) Album(path string) (*Album, error) {
 // given path. Any attempt to read anything other than an image will result
 // in an error.
 func (p Provider) Image(path string) (io.Reader, error) {
-	if !isImage(path) {
+	if !IsImage(path) {
 		return nil, errors.New("not an image")
 	}
 	return p.Open(path)
-}
-
-var imageExtensions = []string{".jpg", ".jpeg", ".png"}
-
-func isImage(path string) bool {
-	ext := filepath.Ext(path)
-	for _, imExt := range imageExtensions {
-		if strings.EqualFold(ext, imExt) {
-			return true
-		}
-	}
-	return false
 }
