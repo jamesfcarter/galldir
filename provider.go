@@ -11,7 +11,7 @@ import (
 // which they are stored. Access is read only.
 type Backend interface {
 	ReadDir(string) ([]os.FileInfo, error)
-	Open(string) (io.Reader, error)
+	Open(string) (io.ReadSeeker, error)
 }
 
 // Provider is used to fetch Albums and Images from a Backend
@@ -34,6 +34,7 @@ func (p Provider) Album(path string) (*Album, error) {
 		images = append(images, Image{
 			Path:    filepath.Join(path, file.Name()),
 			Name:    file.Name(),
+			Time:    file.ModTime(),
 			IsAlbum: file.IsDir(),
 		})
 	}
@@ -43,10 +44,10 @@ func (p Provider) Album(path string) (*Album, error) {
 	}, nil
 }
 
-// Image returns an io.Reader for an image stored in the backend at the
-// given path. Any attempt to read anything other than an image will result
-// in an error.
-func (p Provider) Image(path string) (io.Reader, error) {
+// ImageContent returns an io.ReadSeeker for an image stored in the backend
+// at the given path. Any attempt to read anything other than an image will
+// result in an error.
+func (p Provider) ImageContent(path string) (io.ReadSeeker, error) {
 	if !IsImage(path) {
 		return nil, errors.New("not an image")
 	}

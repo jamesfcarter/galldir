@@ -19,7 +19,7 @@ func (backend FsBackend) ReadDir(path string) ([]os.FileInfo, error) {
 }
 
 // Open opens the file at the supplied path for reading.
-func (backend FsBackend) Open(path string) (io.Reader, error) {
+func (backend FsBackend) Open(path string) (io.ReadSeeker, error) {
 	return os.Open(backend.Path(path))
 }
 
