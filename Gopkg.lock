@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:47cebe27e59e4e0c239d0bf2419d6a46f0364a56efc43be702c32b82710b6ecf"
+  name = "github.com/disintegration/imaging"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5362c131d56305ce787e79a5b94ffc956df00d62"
+  version = "v1.6.0"
+
+[[projects]]
   branch = "master"
   digest = "1:68cecd4c1137f77dfa2db1f13a0ceef2b5606d6b69d66fa69f7df1b2f2fe9afc"
   name = "github.com/shurcooL/httpfs"
@@ -17,9 +25,24 @@
   pruneopts = "UT"
   revision = "6a9ea43bcacdf716a5c1b38efff722c07adf0069"
 
+[[projects]]
+  branch = "master"
+  digest = "1:4c5fae3d31eb72f59429f9218ff258128ef37edcae9785f93bb9f1609b392c51"
+  name = "golang.org/x/image"
+  packages = [
+    "bmp",
+    "tiff",
+    "tiff/lzw",
+  ]
+  pruneopts = "UT"
+  revision = "3fc05d484e9f77dd51816890e05f2602e4ca4d65"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = ["github.com/shurcooL/vfsgen"]
+  input-imports = [
+    "github.com/disintegration/imaging",
+    "github.com/shurcooL/vfsgen",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
