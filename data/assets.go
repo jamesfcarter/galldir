@@ -4,4 +4,3 @@ package data
 // assets_vfsdata.go via go generate.
 
 //go:generate go run assets_generate.go
-

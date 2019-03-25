@@ -10,10 +10,10 @@ import (
 )
 
 func main() {
-        fs := http.Dir("assets")
+	fs := http.Dir("assets")
 	err := vfsgen.Generate(fs, vfsgen.Options{
-		PackageName:  "data",
-		VariableName: "Assets",
+		PackageName:     "data",
+		VariableName:    "Assets",
 		VariableComment: "go:generate go run assets_generate.go",
 	})
 	if err != nil {

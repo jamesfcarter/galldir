@@ -1,10 +1,10 @@
 package galldir
 
 import (
-"log"
+	"fmt"
+	"log"
 	"net/http"
 	"path"
-	"fmt"
 )
 
 type Server struct {
@@ -19,7 +19,7 @@ func (s *Server) album(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprintf(w, "<html><body><ul>")
 	for _, image := range album.Images {
-	    fmt.Fprintf(w, "<li><a href='%s'>%s</a></li>", image.Path, image.Name)
+		fmt.Fprintf(w, "<li><a href='%s'>%s</a></li>", image.Path, image.Name)
 	}
 	fmt.Fprintf(w, "</ul></body></html>")
 }
@@ -51,3 +51,22 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.album(w, r)
 	}
 }
+
+var indexTemplate string = `
+<html>
+    <head>
+	<link type="text/css" rel="stylesheet" href="/css/lightgallery.css" />
+    </head>
+    <body>
+	<div class="galldir">
+	    <ul id="lightgallery">
+	    {{ range .images }}
+		<li data-src="{{ .Path }}">
+		    <img src="{{ .Path }}" />
+		</li>
+	    {{ end }}
+	    </ul>
+	</div>
+    </body>
+</html>
+`
