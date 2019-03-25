@@ -1,10 +1,16 @@
 package galldir
 
 import (
-	"fmt"
+	"html/template"
+	"image"
+	"image/jpeg"
+	_ "image/png"
+	"io"
 	"log"
 	"net/http"
 	"path"
+
+	"github.com/disintegration/imaging"
 )
 
 type Server struct {
@@ -17,11 +23,24 @@ func (s *Server) album(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	fmt.Fprintf(w, "<html><body><ul>")
-	for _, image := range album.Images {
-		fmt.Fprintf(w, "<li><a href='%s'>%s</a></li>", image.Path, image.Name)
+	err = indexTemplate.Execute(w, album)
+	if err != nil {
+		log.Println(err)
 	}
-	fmt.Fprintf(w, "</ul></body></html>")
+}
+
+func isThumb(r *http.Request) bool {
+	thumbParams, ok := r.URL.Query()["thumb"]
+	return ok && len(thumbParams[0]) > 0
+}
+
+func generateThumb(r io.Reader, w io.Writer) error {
+	im, _, err := image.Decode(r)
+	if err != nil {
+		return err
+	}
+	thumb := imaging.Resize(im, 100, 0, imaging.Lanczos)
+	return jpeg.Encode(w, thumb, nil)
 }
 
 func (s *Server) image(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +60,13 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+	if isThumb(r) {
+		err := generateThumb(content, w)
+		if err != nil {
+			log.Println(err)
+		}
+		return
+	}
 	http.ServeContent(w, r, image.Name, image.Time, content)
 }
 
@@ -52,21 +78,28 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var indexTemplate string = `
+var indexTemplate = template.Must(template.New("index.html").Parse(`
 <html>
     <head>
 	<link type="text/css" rel="stylesheet" href="/css/lightgallery.css" />
     </head>
     <body>
-	<div class="galldir">
-	    <ul id="lightgallery">
-	    {{ range .images }}
-		<li data-src="{{ .Path }}">
-		    <img src="{{ .Path }}" />
-		</li>
-	    {{ end }}
-	    </ul>
+        <script src="/js/lightgallery.min.js"></script>
+        <script src="/js/lg-thumbnail.min.js"></script>
+        <script src="/js/lg-fullscreen.min.js"></script>
+	<div id="lightgallery">
+	{{ range .Images }}
+	    <a href="{{ .Path }}">
+		<img src="{{ .Path }}?thumb=1" />
+	    </a>
+	{{ end }}
 	</div>
+    	<script>
+	    lightGallery(document.getElementById('lightgallery'), {
+		thumbnail:true,
+		animatedthumb:true
+	    });
+        </script>
     </body>
 </html>
-`
+`))
