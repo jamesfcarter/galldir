@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/jamesfcarter/galldir"
+	"github.com/jamesfcarter/galldir/data"
 )
 
 func main() {
@@ -16,5 +17,12 @@ func main() {
 	provider := galldir.Provider{galldir.FsBackend(*dir)}
 	server := &galldir.Server{Provider: provider}
 
-	log.Fatal(http.ListenAndServe(*addr, server))
+	assets := http.FileServer(data.Assets)
+
+	for _, dir := range []string{"/img/", "/js/", "/css/"} {
+		http.Handle(dir, assets)
+	}
+	http.Handle("/", server)
+
+	log.Fatal(http.ListenAndServe(*addr, nil))
 }
