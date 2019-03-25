@@ -4,3 +4,4 @@ The idea of this project is a photo gallery that is entirely driven from the
 filesystem - no databases, no image upload interfaces, (almost) no
 configuration.
 
+Uses https://github.com/sachinchoolur/lightgallery.js
