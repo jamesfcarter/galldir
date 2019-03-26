@@ -29,7 +29,7 @@ func TestAlbum(t *testing.T) {
 		},
 		{
 			path:   "/subalbum",
-			name:   "subalbum",
+			name:   "Subalbum",
 			images: []string{"icon.png"},
 		},
 	}
@@ -54,7 +54,7 @@ func TestAlbum(t *testing.T) {
 				t.Run(name, func(t *testing.T) {
 					im := album.Images[i]
 					isAlbum := strings.HasSuffix(name, "/")
-					if im.Name != filepath.Clean(name) {
+					if im.Path != filepath.Join(album.Path, filepath.Clean(name)) {
 						t.Errorf(`unexpected image "%s"`, im.Name)
 					}
 					if im.IsAlbum != isAlbum {
@@ -146,7 +146,7 @@ func TestImageThumb(t *testing.T) {
 			// test again for cached copy
 			r, err = provider.ImageThumb(tc.path, 10)
 			if err != nil {
-			    t.Fatal(err)
+				t.Fatal(err)
 			}
 			testHash(t, r, tc.hash)
 		})

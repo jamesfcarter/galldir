@@ -27,3 +27,20 @@ func TestIsImage(t *testing.T) {
 		})
 	}
 }
+
+func TestNameFromPath(t *testing.T) {
+	tests := []struct {
+		path     string
+		expected string
+	}{
+		{"2018_01_01", "2018-01-01"},
+		{"foo_bar_baz", "Foo Bar Baz"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.path, func(t *testing.T) {
+			if r := galldir.NameFromPath(tc.path); r != tc.expected {
+				t.Fatalf("unexpected result: %s", r)
+			}
+		})
+	}
+}

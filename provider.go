@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/disintegration/imaging"
 	cache "github.com/patrickmn/go-cache"
@@ -36,32 +37,34 @@ func NewProvider(b Backend) *Provider {
 	}
 }
 
-func (p *Provider) loadFile(a *Album, name string) string {
-	path := filepath.Join(a.Path, name)
+func (p *Provider) loadFile(path string) string {
+	cacheName := fmt.Sprintf("file-%s", path)
+	cacheVal, cached := p.Cache.Get(cacheName)
+	if cached {
+		return cacheVal.(string)
+	}
+	var content string
 	f, err := p.Open(path)
-	if err != nil {
-		return ""
+	if err == nil {
+		contentBytes, _ := ioutil.ReadAll(f)
+		content = string(contentBytes)
 	}
-	content, err := ioutil.ReadAll(f)
-	if err != nil {
-		return ""
-	}
-	return string(content)
+	content = strings.TrimSuffix(content, "\n")
+	p.Cache.Set(cacheName, content, cache.DefaultExpiration)
+	return content
 }
 
-func (p *Provider) getAlbumName(a *Album) {
-	name := p.loadFile(a, ".title")
-	if name == "" {
-		name = filepath.Base(a.Path)
+func (p *Provider) getName(path string) string {
+	if name := p.loadFile(filepath.Join(path, ".title")); name != "" {
+		return name
 	}
-	a.Name = name
+	return NameFromPath(path)
 }
 
 // Album retrieves an Album from the backend, or returns an error if
 // it is unable to.
 func (p *Provider) Album(path string) (*Album, error) {
-	a := &Album{Path: path}
-	p.getAlbumName(a)
+	a := &Album{Path: path, Name: p.getName(path)}
 	files, err := p.ReadDir(path)
 	if err != nil {
 		return nil, err
@@ -71,9 +74,15 @@ func (p *Provider) Album(path string) (*Album, error) {
 		if !file.IsDir() && !IsImage(file.Name()) {
 			continue
 		}
+		path := filepath.Join(path, file.Name())
 		a.Images = append(a.Images, Image{
-			Path:    filepath.Join(path, file.Name()),
-			Name:    file.Name(),
+			Path: path,
+			Name: func() string {
+				if file.IsDir() {
+					return p.getName(path)
+				}
+				return file.Name()
+			}(),
 			Time:    file.ModTime(),
 			IsAlbum: file.IsDir(),
 		})
@@ -116,4 +125,22 @@ func (p *Provider) ImageThumb(path string, width int) (io.ReadSeeker, error) {
 	jpgBytes := buf.Bytes()
 	p.Cache.Set(cacheName, jpgBytes, cache.DefaultExpiration)
 	return bytes.NewReader(jpgBytes), nil
+}
+
+// AlbumThumb  returns a (potentially cached) thumbnail of the album cover,
+// scaled to the width
+func (p *Provider) CoverThumb(album *Album, width int) (io.ReadSeeker, error) {
+	if cover := p.loadFile(filepath.Join(album.Path, ".cover")); cover != "" {
+		return p.ImageThumb(filepath.Join(album.Path, cover), width)
+	}
+	photos := album.Photos()
+	if len(photos) == 0 {
+		return nil, errors.New("no photo for cover")
+	}
+	for i := range photos {
+		if strings.Contains(photos[i].Name, "star") {
+			return p.ImageThumb(photos[i].Path, width)
+		}
+	}
+	return p.ImageThumb(photos[0].Path, width)
 }

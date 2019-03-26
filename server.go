@@ -1,6 +1,7 @@
 package galldir
 
 import (
+"time"
 	"html/template"
 	"io"
 	"log"
@@ -12,10 +13,23 @@ type Server struct {
 	Provider *Provider
 }
 
+func (s *Server) albumThumb(w http.ResponseWriter, r *http.Request, album *Album) {
+	content, err := s.Provider.CoverThumb(album, 100)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	http.ServeContent(w, r, "", time.Now(), content)
+}
+
 func (s *Server) album(w http.ResponseWriter, r *http.Request) {
 	album, err := s.Provider.Album(r.URL.Path)
 	if err != nil {
 		log.Println(err)
+		return
+	}
+	if isThumb(r) {
+		s.albumThumb(w, r, album)
 		return
 	}
 	err = indexTemplate.Execute(w, album)
@@ -65,24 +79,27 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 var indexTemplate = template.Must(template.New("index.html").Parse(`
 <html>
     <head>
+	<title>{{ .Name }}</title>
 	<link type="text/css" rel="stylesheet" href="/css/lightgallery.css" />
     </head>
     <body>
+	<h1>{{ .Name }}</h1>
         <script src="/js/lightgallery.min.js"></script>
         <script src="/js/lg-thumbnail.min.js"></script>
         <script src="/js/lg-fullscreen.min.js"></script>
 	<div>
 	    <ul>
 	    {{ range .Albums }}
-		<li><a href="{{ .Path }}">{{ .Name }}</a></li>
+		<li>
+		    <img src="{{ .Path }}?thumb=1" />
+		    <a href="{{ .Path }}">{{ .Name }}</a>
+		</li>
 	    {{ end }}
 	    </ul>
 	</div>
 	<div id="lightgallery">
 	{{ range .Photos }}
-	    <a href="{{ .Path }}">
-		<img src="{{ .Path }}?thumb=1" />
-	    </a>
+	    <a href="{{ .Path }}"><img src="{{ .Path }}?thumb=1" /></a>
 	{{ end }}
 	</div>
     	<script>
