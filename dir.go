@@ -30,3 +30,24 @@ func (a *Album) Image(path string) *Image {
 	}
 	return nil
 }
+
+func (a *Album) images(isAlbum bool) []Image {
+	result := make([]Image, 0, len(a.Images))
+	for _, im := range a.Images {
+		if im.IsAlbum != isAlbum {
+			continue
+		}
+		result = append(result, im)
+	}
+	return result
+}
+
+// Images returns a list of images from an album that are not sub-albums
+func (a *Album) Photos() []Image {
+	return a.images(false)
+}
+
+// Albums returns a list of images from an album that are sub-albums
+func (a *Album) Albums() []Image {
+	return a.images(true)
+}

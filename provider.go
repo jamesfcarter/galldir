@@ -3,8 +3,11 @@ package galldir
 import (
 	"errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	cache "github.com/patrickmn/go-cache"
 )
 
 // Backend is an interface for accessing images and the folders in
@@ -19,29 +22,49 @@ type Provider struct {
 	Backend
 }
 
-// Album retreives an Album from the backend, or returns an error if
+func (p Provider) loadFile(a *Album, name string) string {
+	path := filepath.Join(a.Path, name)
+	f, err := p.Open(path)
+	if err != nil {
+		return ""
+	}
+	content, err := ioutil.ReadAll(f)
+	if err != nil {
+		return ""
+	}
+	return string(content)
+}
+
+func (p Provider) getAlbumName(a *Album) {
+	name := p.loadFile(a, ".title")
+	if name == "" {
+		name = filepath.Base(a.Path)
+	}
+	a.Name = name
+}
+
+// Album retrieves an Album from the backend, or returns an error if
 // it is unable to.
 func (p Provider) Album(path string) (*Album, error) {
+	a := &Album{Path: path}
+	p.getAlbumName(a)
 	files, err := p.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
-	images := make([]Image, 0, len(files))
+	a.Images = make([]Image, 0, len(files))
 	for _, file := range files {
 		if !file.IsDir() && !IsImage(file.Name()) {
 			continue
 		}
-		images = append(images, Image{
+		a.Images = append(a.Images, Image{
 			Path:    filepath.Join(path, file.Name()),
 			Name:    file.Name(),
 			Time:    file.ModTime(),
 			IsAlbum: file.IsDir(),
 		})
 	}
-	return &Album{
-		Path:   path,
-		Images: images,
-	}, nil
+	return a, nil
 }
 
 // ImageContent returns an io.ReadSeeker for an image stored in the backend

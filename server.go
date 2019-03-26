@@ -87,8 +87,15 @@ var indexTemplate = template.Must(template.New("index.html").Parse(`
         <script src="/js/lightgallery.min.js"></script>
         <script src="/js/lg-thumbnail.min.js"></script>
         <script src="/js/lg-fullscreen.min.js"></script>
+	<div>
+	    <ul>
+	    {{ range .Albums }}
+		<li><a href="{{ .Path }}">{{ .Name }}</a></li>
+	    {{ end }}
+	    </ul>
+	</div>
 	<div id="lightgallery">
-	{{ range .Images }}
+	{{ range .Photos }}
 	    <a href="{{ .Path }}">
 		<img src="{{ .Path }}?thumb=1" />
 	    </a>
