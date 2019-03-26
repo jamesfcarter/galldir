@@ -69,6 +69,18 @@ func TestAlbum(t *testing.T) {
 	}
 }
 
+func testHash(t *testing.T, r io.Reader, expected string) {
+	if expected == "" {
+		return
+	}
+	hasher := sha1.New()
+	io.Copy(hasher, r)
+	sha := fmt.Sprintf("%x", hasher.Sum(nil))
+	if sha != expected {
+		t.Errorf("bad hash: %s", sha)
+	}
+}
+
 func TestImageContent(t *testing.T) {
 	tests := []struct {
 		path      string
@@ -94,15 +106,49 @@ func TestImageContent(t *testing.T) {
 			if err != nil && !tc.expectErr {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if err != nil || tc.hash == "" {
+			if err != nil {
 				return
 			}
-			hasher := sha1.New()
-			io.Copy(hasher, r)
-			sha := fmt.Sprintf("%x", hasher.Sum(nil))
-			if sha != tc.hash {
-				t.Errorf("bad hash: %s", sha)
+			testHash(t, r, tc.hash)
+		})
+	}
+}
+
+func TestImageThumb(t *testing.T) {
+	tests := []struct {
+		path      string
+		hash      string
+		expectErr bool
+	}{
+		{
+			path:      "/not_there.jpg",
+			expectErr: true,
+		},
+		{
+			path: "/subalbum/icon.png",
+			hash: "0a42d4b9ebda8bf872462e4c2a8c7934734f56b1",
+		},
+	}
+	provider := galldir.NewProvider(galldir.FsBackend("testdata/album"))
+	for _, tc := range tests {
+		t.Run(tc.path, func(t *testing.T) {
+			r, err := provider.ImageThumb(tc.path, 10)
+			if err == nil && tc.expectErr {
+				t.Fatal("expected an error")
 			}
+			if err != nil && !tc.expectErr {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if err != nil {
+				return
+			}
+			testHash(t, r, tc.hash)
+			// test again for cached copy
+			r, err = provider.ImageThumb(tc.path, 10)
+			if err != nil {
+			    t.Fatal(err)
+			}
+			testHash(t, r, tc.hash)
 		})
 	}
 }

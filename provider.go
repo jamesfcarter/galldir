@@ -1,12 +1,19 @@
 package galldir
 
 import (
+	"bytes"
 	"errors"
-	cache "github.com/patrickmn/go-cache"
+	"fmt"
+	"image"
+	"image/jpeg"
+	_ "image/png"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/disintegration/imaging"
+	cache "github.com/patrickmn/go-cache"
 )
 
 // Backend is an interface for accessing images and the folders in
@@ -82,4 +89,31 @@ func (p *Provider) ImageContent(path string) (io.ReadSeeker, error) {
 		return nil, errors.New("not an image")
 	}
 	return p.Open(path)
+}
+
+// ImageThumb returns a (potentially cached) thumbnail of the image
+// at the given path, scaled to the width.
+func (p *Provider) ImageThumb(path string, width int) (io.ReadSeeker, error) {
+	cacheName := fmt.Sprintf("thumb%d-%s", width, path)
+	cachedImage, cached := p.Cache.Get(cacheName)
+	if cached {
+		return bytes.NewReader(cachedImage.([]byte)), nil
+	}
+	src, err := p.ImageContent(path)
+	if err != nil {
+		return nil, err
+	}
+	im, _, err := image.Decode(src)
+	if err != nil {
+		return nil, err
+	}
+	thumb := imaging.Resize(im, width, 0, imaging.Lanczos)
+	buf := bytes.NewBuffer(nil)
+	err = jpeg.Encode(buf, thumb, nil)
+	if err != nil {
+		return nil, err
+	}
+	jpgBytes := buf.Bytes()
+	p.Cache.Set(cacheName, jpgBytes, cache.DefaultExpiration)
+	return bytes.NewReader(jpgBytes), nil
 }

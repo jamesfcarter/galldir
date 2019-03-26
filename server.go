@@ -2,15 +2,10 @@ package galldir
 
 import (
 	"html/template"
-	"image"
-	"image/jpeg"
-	_ "image/png"
 	"io"
 	"log"
 	"net/http"
 	"path"
-
-	"github.com/disintegration/imaging"
 )
 
 type Server struct {
@@ -34,15 +29,6 @@ func isThumb(r *http.Request) bool {
 	return ok && len(thumbParams[0]) > 0
 }
 
-func generateThumb(r io.Reader, w io.Writer) error {
-	im, _, err := image.Decode(r)
-	if err != nil {
-		return err
-	}
-	thumb := imaging.Resize(im, 100, 0, imaging.Lanczos)
-	return jpeg.Encode(w, thumb, nil)
-}
-
 func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 	albumPath := path.Dir(r.URL.Path)
 	album, err := s.Provider.Album(albumPath)
@@ -55,16 +41,14 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 		log.Printf("image %s not found\n", r.URL.Path)
 		return
 	}
-	content, err := s.Provider.ImageContent(r.URL.Path)
+	var content io.ReadSeeker
+	if isThumb(r) {
+		content, err = s.Provider.ImageThumb(r.URL.Path, 100)
+	} else {
+		content, err = s.Provider.ImageContent(r.URL.Path)
+	}
 	if err != nil {
 		log.Println(err)
-		return
-	}
-	if isThumb(r) {
-		err := generateThumb(content, w)
-		if err != nil {
-			log.Println(err)
-		}
 		return
 	}
 	http.ServeContent(w, r, image.Name, image.Time, content)
