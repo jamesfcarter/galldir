@@ -10,6 +10,14 @@
   version = "v1.6.0"
 
 [[projects]]
+  digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
+  name = "github.com/patrickmn/go-cache"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0"
+  version = "v2.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:68cecd4c1137f77dfa2db1f13a0ceef2b5606d6b69d66fa69f7df1b2f2fe9afc"
   name = "github.com/shurcooL/httpfs"
@@ -42,6 +50,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/disintegration/imaging",
+    "github.com/patrickmn/go-cache",
     "github.com/shurcooL/vfsgen",
   ]
   solver-name = "gps-cdcl"

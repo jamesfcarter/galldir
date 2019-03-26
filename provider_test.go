@@ -33,7 +33,7 @@ func TestAlbum(t *testing.T) {
 			images: []string{"icon.png"},
 		},
 	}
-	provider := galldir.Provider{galldir.FsBackend("testdata/album")}
+	provider := galldir.NewProvider(galldir.FsBackend("testdata/album"))
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
 			album, err := provider.Album(tc.path)
@@ -84,7 +84,7 @@ func TestImageContent(t *testing.T) {
 			hash: "aa72605dbcb4f8b933be68f0d11391673cd9ecc7",
 		},
 	}
-	provider := galldir.Provider{galldir.FsBackend("testdata/album")}
+	provider := galldir.NewProvider(galldir.FsBackend("testdata/album"))
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
 			r, err := provider.ImageContent(tc.path)

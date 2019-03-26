@@ -14,7 +14,7 @@ import (
 )
 
 type Server struct {
-	Provider Provider
+	Provider *Provider
 }
 
 func (s *Server) album(w http.ResponseWriter, r *http.Request) {

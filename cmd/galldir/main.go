@@ -14,7 +14,7 @@ func main() {
 	addr := flag.String("addr", "", "Address to serve")
 	flag.Parse()
 
-	provider := galldir.Provider{galldir.FsBackend(*dir)}
+	provider := galldir.NewProvider(galldir.FsBackend(*dir))
 	server := &galldir.Server{Provider: provider}
 
 	assets := http.FileServer(data.Assets)
