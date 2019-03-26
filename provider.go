@@ -2,11 +2,11 @@ package galldir
 
 import (
 	"errors"
+	cache "github.com/patrickmn/go-cache"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	cache "github.com/patrickmn/go-cache"
 )
 
 // Backend is an interface for accessing images and the folders in
@@ -23,10 +23,10 @@ type Provider struct {
 }
 
 func NewProvider(b Backend) *Provider {
-    return &Provider{
-	Backend: b,
-	Cache: cache.New(0, 0),
-    }
+	return &Provider{
+		Backend: b,
+		Cache:   cache.New(0, 0),
+	}
 }
 
 func (p *Provider) loadFile(a *Album, name string) string {
