@@ -6,8 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	cache "github.com/patrickmn/go-cache"
+	//cache "github.com/patrickmn/go-cache"
 )
 
 // Backend is an interface for accessing images and the folders in
@@ -20,6 +19,7 @@ type Backend interface {
 // Provider is used to fetch Albums and Images from a Backend
 type Provider struct {
 	Backend
+	//Cache cache.Cache
 }
 
 func (p Provider) loadFile(a *Album, name string) string {

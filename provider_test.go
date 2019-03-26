@@ -11,12 +11,24 @@ import (
 func TestAlbum(t *testing.T) {
 	tests := []struct {
 		path      string
+		name      string
 		images    []string
 		expectErr bool
 	}{
-		{"/", []string{"subalbum/"}, false},
-		{"/not_there", []string{}, true},
-		{"/subalbum", []string{"icon.png"}, false},
+		{
+			path:   "/",
+			name:   "Test Album",
+			images: []string{"subalbum/"},
+		},
+		{
+			path:      "/not_there",
+			expectErr: true,
+		},
+		{
+			path:   "/subalbum",
+			name:   "subalbum",
+			images: []string{"icon.png"},
+		},
 	}
 	provider := galldir.Provider{galldir.FsBackend("testdata/album")}
 	for _, tc := range tests {
@@ -46,6 +58,9 @@ func TestAlbum(t *testing.T) {
 						t.Error("incorrect isAlbum")
 					}
 				})
+			}
+			if tc.name != "" && album.Name != tc.name {
+				t.Errorf("unexpected album name: %s", album.Name)
 			}
 		})
 	}
