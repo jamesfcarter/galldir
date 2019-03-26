@@ -19,7 +19,9 @@ func main() {
 
 	assets := http.FileServer(data.Assets)
 
-	for _, dir := range []string{"/img/", "/js/", "/css/", "/fonts/"} {
+	for _, dir := range []string{
+	    "/favicon.ico", "/img/", "/js/", "/css/", "/fonts/",
+	} {
 		http.Handle(dir, assets)
 	}
 	http.Handle("/", server)

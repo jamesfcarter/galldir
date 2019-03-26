@@ -26,12 +26,12 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="197.27164"
-     inkscape:cy="767.71062"
+     inkscape:cx="-52.72836"
+     inkscape:cy="824.85348"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1057"
+     inkscape:window-width="1362"
      inkscape:window-height="691"
      inkscape:window-x="220"
      inkscape:window-y="117"
@@ -44,7 +44,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -53,16 +53,19 @@
      inkscape:groupmode="layer"
      id="layer1">
     <g
-       id="g4558"
-       transform="translate(2.1381562,-214.8847)">
+       id="g834"
+       inkscape:export-filename="/tmp/a.png"
+       inkscape:export-xdpi="28.540001"
+       inkscape:export-ydpi="28.540001">
       <rect
-         y="224.5"
-         x="12.5"
+         y="9.6153002"
+         x="14.638156"
          height="60"
          width="80"
          id="rect4518"
-         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
       <g
+         transform="translate(2.1381562,-214.8847)"
          id="g4543">
         <path
            style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
@@ -76,7 +79,7 @@
            style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
       </g>
       <g
-         transform="matrix(-0.99998854,0,0,1.0000004,104.99989,-1.0962679e-4)"
+         transform="matrix(-0.99998854,0,0,1.0000004,107.13805,-214.88481)"
          id="g4549">
         <path
            inkscape:connector-curvature="0"
