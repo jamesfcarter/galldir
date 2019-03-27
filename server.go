@@ -14,11 +14,16 @@ type Server struct {
 	Assets   http.FileSystem
 }
 
+const (
+	AlbumPath  = "/img/album.png"
+	ThumbWidth = 128
+)
+
 func (s *Server) albumThumb(w http.ResponseWriter, r *http.Request, album *Album) {
-	content, err := s.Provider.CoverThumb(album, 100)
+	content, err := s.Provider.CoverThumb(album, ThumbWidth)
 	if err != nil {
 		log.Println(err)
-		content, err = s.assetThumb("/img/album.png")
+		content, err = s.assetThumb(AlbumPath)
 	}
 	if err != nil {
 		log.Println(err)
@@ -49,12 +54,12 @@ func isThumb(r *http.Request) bool {
 }
 
 func (s *Server) assetThumb(path string) (io.ReadSeeker, error) {
-	cacheName := ThumbName("assetthumb", 100, path)
+	cacheName := ThumbName("assetthumb", ThumbWidth, path)
 	image, err := s.Assets.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	return s.Provider.CachedThumb(cacheName, 100, image)
+	return s.Provider.CachedThumb(cacheName, ThumbWidth, image)
 }
 
 func (s *Server) image(w http.ResponseWriter, r *http.Request) {
@@ -71,9 +76,9 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 	}
 	var content io.ReadSeeker
 	if isThumb(r) {
-		content, err = s.Provider.ImageThumb(r.URL.Path, 100)
+		content, err = s.Provider.ImageThumb(r.URL.Path, ThumbWidth)
 		if err != nil {
-			content, err = s.assetThumb("/img/album.png")
+			content, err = s.assetThumb(AlbumPath)
 		}
 	} else {
 		content, err = s.Provider.ImageContent(r.URL.Path)
