@@ -9,6 +9,7 @@ import (
 	_ "image/png"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,23 +18,16 @@ import (
 	cache "github.com/patrickmn/go-cache"
 )
 
-// Backend is an interface for accessing images and the folders in
-// which they are stored. Access is read only.
-type Backend interface {
-	ReadDir(string) ([]os.FileInfo, error)
-	Open(string) (io.ReadSeeker, error)
-}
-
 // Provider is used to fetch Albums and Images from a Backend
 type Provider struct {
-	Backend
+	FS    http.FileSystem
 	Cache *cache.Cache
 }
 
-func NewProvider(b Backend) *Provider {
+func NewProvider(backend http.FileSystem) *Provider {
 	return &Provider{
-		Backend: b,
-		Cache:   cache.New(0, 0),
+		FS:    backend,
+		Cache: cache.New(0, 0),
 	}
 }
 
@@ -44,7 +38,7 @@ func (p *Provider) loadFile(path string) string {
 		return cacheVal.(string)
 	}
 	var content string
-	f, err := p.Open(path)
+	f, err := p.FS.Open(path)
 	if err == nil {
 		contentBytes, _ := ioutil.ReadAll(f)
 		content = string(contentBytes)
@@ -61,11 +55,19 @@ func (p *Provider) getName(path string) string {
 	return NameFromPath(path)
 }
 
+func (p *Provider) readDir(path string) ([]os.FileInfo, error) {
+	file, err := p.FS.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	return file.Readdir(0)
+}
+
 // Album retrieves an Album from the backend, or returns an error if
 // it is unable to.
 func (p *Provider) Album(path string) (*Album, error) {
 	a := &Album{Path: path, Name: p.getName(path)}
-	files, err := p.ReadDir(path)
+	files, err := p.readDir(path)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +99,7 @@ func (p *Provider) ImageContent(path string) (io.ReadSeeker, error) {
 	if !IsImage(path) {
 		return nil, errors.New("not an image")
 	}
-	return p.Open(path)
+	return p.FS.Open(path)
 }
 
 // ImageThumb returns a (potentially cached) thumbnail of the image

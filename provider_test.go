@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
+	"net/http"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -33,7 +34,7 @@ func TestAlbum(t *testing.T) {
 			images: []string{"icon.png"},
 		},
 	}
-	provider := galldir.NewProvider(galldir.FsBackend("testdata/album"))
+	provider := galldir.NewProvider(http.Dir("testdata/album"))
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
 			album, err := provider.Album(tc.path)
@@ -96,7 +97,7 @@ func TestImageContent(t *testing.T) {
 			hash: "aa72605dbcb4f8b933be68f0d11391673cd9ecc7",
 		},
 	}
-	provider := galldir.NewProvider(galldir.FsBackend("testdata/album"))
+	provider := galldir.NewProvider(http.Dir("testdata/album"))
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
 			r, err := provider.ImageContent(tc.path)
@@ -129,7 +130,7 @@ func TestImageThumb(t *testing.T) {
 			hash: "0a42d4b9ebda8bf872462e4c2a8c7934734f56b1",
 		},
 	}
-	provider := galldir.NewProvider(galldir.FsBackend("testdata/album"))
+	provider := galldir.NewProvider(http.Dir("testdata/album"))
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
 			r, err := provider.ImageThumb(tc.path, 10)

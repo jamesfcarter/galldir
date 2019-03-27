@@ -1,12 +1,12 @@
 package galldir
 
 import (
-"time"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"path"
+	"time"
 )
 
 type Server struct {

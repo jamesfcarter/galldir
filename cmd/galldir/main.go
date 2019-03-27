@@ -14,13 +14,13 @@ func main() {
 	addr := flag.String("addr", "", "Address to serve")
 	flag.Parse()
 
-	provider := galldir.NewProvider(galldir.FsBackend(*dir))
+	provider := galldir.NewProvider(http.Dir(*dir))
 	server := &galldir.Server{Provider: provider}
 
 	assets := http.FileServer(data.Assets)
 
 	for _, dir := range []string{
-	    "/favicon.ico", "/img/", "/js/", "/css/", "/fonts/",
+		"/favicon.ico", "/img/", "/js/", "/css/", "/fonts/",
 	} {
 		http.Handle(dir, assets)
 	}
