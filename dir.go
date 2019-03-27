@@ -19,6 +19,7 @@ type Album struct {
 	Name        string
 	Description string
 	Images      []Image
+	Time	    time.Time
 }
 
 // Image returns an Image from an Album or nil if it cannot be found
