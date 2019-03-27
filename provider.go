@@ -10,7 +10,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -55,19 +54,23 @@ func (p *Provider) getName(path string) string {
 	return NameFromPath(path)
 }
 
-func (p *Provider) readDir(path string) ([]os.FileInfo, error) {
-	file, err := p.FS.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	return file.Readdir(0)
-}
-
 // Album retrieves an Album from the backend, or returns an error if
 // it is unable to.
 func (p *Provider) Album(path string) (*Album, error) {
-	a := &Album{Path: path, Name: p.getName(path)}
-	files, err := p.readDir(path)
+	albumFile, err := p.FS.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	fi, err := albumFile.Stat()
+	if err != nil {
+		return nil, err
+	}
+	a := &Album{
+		Path: path,
+		Name: p.getName(path),
+		Time: fi.ModTime(),
+	}
+	files, err := albumFile.Readdir(0)
 	if err != nil {
 		return nil, err
 	}
