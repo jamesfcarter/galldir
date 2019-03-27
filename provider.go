@@ -31,7 +31,7 @@ func NewProvider(backend http.FileSystem) *Provider {
 }
 
 func (p *Provider) loadFile(path string) string {
-	cacheName := fmt.Sprintf("file-%s", path)
+	cacheName := CacheName("file", path)
 	cacheVal, cached := p.Cache.Get(cacheName)
 	if cached {
 		return cacheVal.(string)
@@ -57,7 +57,7 @@ func (p *Provider) getName(path string) string {
 // Album retrieves an Album from the backend, or returns an error if
 // it is unable to.
 func (p *Provider) Album(path string) (*Album, error) {
-	cacheName := fmt.Sprintf("album-%s", path)
+	cacheName := CacheName("album", path)
 	cacheVal, cached := p.Cache.Get(cacheName)
 	if cached {
 		return cacheVal.(*Album), nil
@@ -119,18 +119,7 @@ func (p *Provider) ImageContent(path string) (io.ReadSeeker, error) {
 	return p.FS.Open(path)
 }
 
-// ImageThumb returns a (potentially cached) thumbnail of the image
-// at the given path, scaled to the width.
-func (p *Provider) ImageThumb(path string, width int) (io.ReadSeeker, error) {
-	cacheName := fmt.Sprintf("thumb%d-%s", width, path)
-	cachedImage, cached := p.Cache.Get(cacheName)
-	if cached {
-		return bytes.NewReader(cachedImage.([]byte)), nil
-	}
-	src, err := p.ImageContent(path)
-	if err != nil {
-		return nil, err
-	}
+func (p *Provider) resizedImage(src io.ReadSeeker, width int, cacheName string) (io.ReadSeeker, error) {
 	im, _, err := image.Decode(src)
 	if err != nil {
 		return nil, err
@@ -146,6 +135,41 @@ func (p *Provider) ImageThumb(path string, width int) (io.ReadSeeker, error) {
 	return bytes.NewReader(jpgBytes), nil
 }
 
+// CacheName generates a unique key for the cache
+func CacheName(class, path string) string {
+	return class + "-" + path
+}
+
+// ThumbName generates a unique key for a thumbname in the cache
+func ThumbName(class string, width int, path string) string {
+	return CacheName(fmt.Sprintf("%s%d", class, width), path)
+}
+
+// CachedThumb returns a (potentially cached) thumbnail of the supplied
+// source image
+func (p *Provider) CachedThumb(cacheName string, width int, src io.ReadSeeker) (io.ReadSeeker, error) {
+	cachedImage, cached := p.Cache.Get(cacheName)
+	if cached {
+		return bytes.NewReader(cachedImage.([]byte)), nil
+	}
+	return p.resizedImage(src, width, cacheName)
+}
+
+// ImageThumb returns a (potentially cached) thumbnail of the image
+// at the given path, scaled to the width.
+func (p *Provider) ImageThumb(path string, width int) (io.ReadSeeker, error) {
+	cacheName := ThumbName("thumb", width, path)
+	cachedImage, cached := p.Cache.Get(cacheName)
+	if cached {
+		return bytes.NewReader(cachedImage.([]byte)), nil
+	}
+	src, err := p.ImageContent(path)
+	if err != nil {
+		return nil, err
+	}
+	return p.resizedImage(src, width, cacheName)
+}
+
 // AlbumThumb  returns a (potentially cached) thumbnail of the album cover,
 // scaled to the width
 func (p *Provider) CoverThumb(album *Album, width int) (io.ReadSeeker, error) {
@@ -154,7 +178,7 @@ func (p *Provider) CoverThumb(album *Album, width int) (io.ReadSeeker, error) {
 	}
 	photos := album.Photos()
 	if len(photos) == 0 {
-		return nil, errors.New("no photo for cover")
+		return nil, errors.New("no photo for cover " + album.Path)
 	}
 	for i := range photos {
 		if strings.Contains(photos[i].Name, "star") {

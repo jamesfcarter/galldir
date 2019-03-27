@@ -15,7 +15,10 @@ func main() {
 	flag.Parse()
 
 	provider := galldir.NewProvider(http.Dir(*dir))
-	server := &galldir.Server{Provider: provider}
+	server := &galldir.Server{
+		Provider: provider,
+		Assets: data.Assets,
+	}
 
 	assets := http.FileServer(data.Assets)
 

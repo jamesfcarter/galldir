@@ -11,10 +11,15 @@ import (
 
 type Server struct {
 	Provider *Provider
+	Assets   http.FileSystem
 }
 
 func (s *Server) albumThumb(w http.ResponseWriter, r *http.Request, album *Album) {
 	content, err := s.Provider.CoverThumb(album, 100)
+	if err != nil {
+		log.Println(err)
+		content, err = s.assetThumb("/img/album.png")
+	}
 	if err != nil {
 		log.Println(err)
 		return
@@ -43,6 +48,15 @@ func isThumb(r *http.Request) bool {
 	return ok && len(thumbParams[0]) > 0
 }
 
+func (s *Server) assetThumb(path string) (io.ReadSeeker, error) {
+	cacheName := ThumbName("assetthumb", 100, path)
+	image, err := s.Assets.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	return s.Provider.CachedThumb(cacheName, 100, image)
+}
+
 func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 	albumPath := path.Dir(r.URL.Path)
 	album, err := s.Provider.Album(albumPath)
@@ -58,6 +72,9 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 	var content io.ReadSeeker
 	if isThumb(r) {
 		content, err = s.Provider.ImageThumb(r.URL.Path, 100)
+		if err != nil {
+			content, err = s.assetThumb("/img/album.png")
+		}
 	} else {
 		content, err = s.Provider.ImageContent(r.URL.Path)
 	}
