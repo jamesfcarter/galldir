@@ -1,6 +1,8 @@
 package galldir
 
 import (
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -12,6 +14,20 @@ type Image struct {
 	Time        time.Time
 	IsAlbum     bool
 }
+
+type ImagesByName []Image
+
+func (a ImagesByName) Len() int      { return len(a) }
+func (a ImagesByName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ImagesByName) Less(i, j int) bool {
+	return strings.ToLower(a[i].Name) < strings.ToLower(a[j].Name)
+}
+
+type ImagesByTime []Image
+
+func (a ImagesByTime) Len() int           { return len(a) }
+func (a ImagesByTime) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ImagesByTime) Less(i, j int) bool { return a[j].Time.Before(a[i].Time) }
 
 // Album specifies a photo album
 type Album struct {
@@ -45,10 +61,14 @@ func (a *Album) images(isAlbum bool) []Image {
 
 // Images returns a list of images from an album that are not sub-albums
 func (a *Album) Photos() []Image {
-	return a.images(false)
+	images := a.images(false)
+	sort.Sort(ImagesByName(images))
+	return images
 }
 
 // Albums returns a list of images from an album that are sub-albums
 func (a *Album) Albums() []Image {
-	return a.images(true)
+	images := a.images(true)
+	sort.Sort(ImagesByTime(images))
+	return images
 }

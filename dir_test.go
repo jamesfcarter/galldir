@@ -2,24 +2,35 @@ package galldir_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/jamesfcarter/galldir"
 )
 
-var foo = galldir.Image{
-	Path: "/foo.png",
-	Name: "foo",
-}
-
-var bar = galldir.Image{
-	Path:    "/bar",
-	Name:    "bar",
-	IsAlbum: true,
-}
-
 var testAlbum = &galldir.Album{
-	Path:   "/",
-	Images: []galldir.Image{foo, bar},
+	Path: "/",
+	Images: []galldir.Image{
+		galldir.Image{
+			Path:    "/foo",
+			Name:    "foo",
+			Time:    time.Unix(1234, 0),
+			IsAlbum: true,
+		},
+		galldir.Image{
+			Path: "/bar.jpg",
+			Name: "bar",
+		},
+		galldir.Image{
+			Path: "/baz.png",
+			Name: "baz",
+		},
+		galldir.Image{
+			Path:    "/qux",
+			Name:    "qux",
+			Time:    time.Unix(5678, 0),
+			IsAlbum: true,
+		},
+	},
 }
 
 func TestImage(t *testing.T) {
@@ -27,8 +38,8 @@ func TestImage(t *testing.T) {
 		path   string
 		result string
 	}{
-		{"/foo.png", "foo"},
-		{"/bar", "bar"},
+		{"/baz.png", "baz"},
+		{"/foo", "foo"},
 		{"/baz", ""},
 	}
 	for _, tc := range tests {
@@ -45,19 +56,21 @@ func TestImage(t *testing.T) {
 	}
 }
 
-func testImages(t *testing.T, result []galldir.Image, name string) {
-	if count := len(result); count != 1 {
+func testImages(t *testing.T, result []galldir.Image, name []string) {
+	if count := len(result); count != len(name) {
 		t.Fatalf("unexpected number of results: %d", count)
 	}
-	if rname := result[0].Name; rname != name {
-		t.Errorf("unexpected result: %s", rname)
+	for i := range result {
+		if rname := result[i].Name; rname != name[i] {
+			t.Errorf("unexpected result: %s", rname)
+		}
 	}
 }
 
 func TestPhotos(t *testing.T) {
-	testImages(t, testAlbum.Photos(), "foo")
+	testImages(t, testAlbum.Photos(), []string{"bar", "baz"})
 }
 
 func TestAlbums(t *testing.T) {
-	testImages(t, testAlbum.Albums(), "bar")
+	testImages(t, testAlbum.Albums(), []string{"qux", "foo"})
 }
