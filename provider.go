@@ -57,6 +57,20 @@ func (p *Provider) getName(path string) string {
 // Album retrieves an Album from the backend, or returns an error if
 // it is unable to.
 func (p *Provider) Album(path string) (*Album, error) {
+	cacheName := fmt.Sprintf("album-%s", path)
+	cacheVal, cached := p.Cache.Get(cacheName)
+	if cached {
+		return cacheVal.(*Album), nil
+	}
+	album, err := p.loadAlbum(path)
+	if err != nil {
+		return nil, err
+	}
+	p.Cache.Set(cacheName, album, cache.DefaultExpiration)
+	return album, nil
+}
+
+func (p *Provider) loadAlbum(path string) (*Album, error) {
 	albumFile, err := p.FS.Open(path)
 	if err != nil {
 		return nil, err
