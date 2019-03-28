@@ -1,11 +1,5 @@
 ## License
 
-### Commercial License
-
-If you want to use lightgallery.js for business, commercial sites, themes, projects, and applications, the Commercial license is the appropriate license. With this option, your source code is kept proprietary. Purchase a lightgallery.js Commercial License at https://site.uplabs.com/posts/lightgallery-js
-
-### Open-source License
-
 If you are creating an open source application under a license compatible with the GNU GPL license v3, you may use this project under the terms of the GPLv3.
 
                     GNU GENERAL PUBLIC LICENSE
