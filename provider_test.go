@@ -153,3 +153,46 @@ func TestImageThumb(t *testing.T) {
 		})
 	}
 }
+
+func TestCoverThumb(t *testing.T) {
+	tests := []struct {
+		path      string
+		hash      string
+		expectErr bool
+	}{
+		{
+			path:      "/",
+			expectErr: true,
+		},
+		{
+			path: "/subalbum",
+			hash: "0a42d4b9ebda8bf872462e4c2a8c7934734f56b1",
+		},
+	}
+	provider := galldir.NewProvider(http.Dir("testdata/album"))
+	for _, tc := range tests {
+		t.Run(tc.path, func(t *testing.T) {
+			album, err := provider.Album(tc.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			r, err := provider.CoverThumb(album, 10)
+			if err == nil && tc.expectErr {
+				t.Fatal("expected an error")
+			}
+			if err != nil && !tc.expectErr {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if err != nil {
+				return
+			}
+			testHash(t, r, tc.hash)
+			// test again for cached copy
+			r, err = provider.CoverThumb(album, 10)
+			if err != nil {
+				t.Fatal(err)
+			}
+			testHash(t, r, tc.hash)
+		})
+	}
+}
