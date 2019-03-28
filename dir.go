@@ -15,6 +15,8 @@ type Image struct {
 	IsAlbum     bool
 }
 
+// ImagesByName implements sort.Interface for []Image to do a case
+// insensitive sort by Name.
 type ImagesByName []Image
 
 func (a ImagesByName) Len() int      { return len(a) }
@@ -23,13 +25,15 @@ func (a ImagesByName) Less(i, j int) bool {
 	return strings.ToLower(a[i].Name) < strings.ToLower(a[j].Name)
 }
 
+// ImagesByTime implements sort.Interface for []Image to sort by Time,
+// most recent first.
 type ImagesByTime []Image
 
 func (a ImagesByTime) Len() int           { return len(a) }
 func (a ImagesByTime) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ImagesByTime) Less(i, j int) bool { return a[j].Time.Before(a[i].Time) }
 
-// Album specifies a photo album
+// Album specifies a photo album.
 type Album struct {
 	Path        string
 	Name        string
@@ -59,7 +63,7 @@ func (a *Album) images(isAlbum bool) []Image {
 	return result
 }
 
-// Images returns a list of images from an album that are not sub-albums
+// Photos returns a list of images from an album that are not sub-albums
 func (a *Album) Photos() []Image {
 	images := a.images(false)
 	sort.Sort(ImagesByName(images))

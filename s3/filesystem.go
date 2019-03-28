@@ -11,6 +11,7 @@ import (
 	as3 "github.com/aws/aws-sdk-go/service/s3"
 )
 
+// Filesystem implements the http.FileSystem interface for an S3 bucket.
 type Filesystem struct {
 	s3     s3Interface
 	bucket string
@@ -33,6 +34,8 @@ func New(url string) *Filesystem {
 	}
 }
 
+// Open returns an http.File interface for an object or simulated directory
+// within the S3 bucket.
 func (f *Filesystem) Open(path string) (http.File, error) {
 	return &File{fs: f, path: prepPath(path)}, nil
 }

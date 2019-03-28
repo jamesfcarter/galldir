@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
-	_ "image/png"
+	_ "image/png" // loaded for image.Decode support
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -24,6 +24,7 @@ type Provider struct {
 	Cache *cache.Cache
 }
 
+// NewProvider returns an initialized Provider
 func NewProvider(backend http.FileSystem) *Provider {
 	return &Provider{
 		FS:    backend,
@@ -191,7 +192,7 @@ func (p *Provider) ImageThumb(path string, width int) (io.ReadSeeker, error) {
 	return p.resizedImage(src, width, cacheName)
 }
 
-// AlbumThumb  returns a (potentially cached) thumbnail of the album cover,
+// CoverThumb returns a (potentially cached) thumbnail of the album cover,
 // scaled to the width
 func (p *Provider) CoverThumb(album *Album, width int) (io.ReadSeeker, error) {
 	if cover := p.loadFile(filepath.Join(album.Path, ".cover")); cover != "" {

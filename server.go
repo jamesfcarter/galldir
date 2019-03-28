@@ -9,21 +9,22 @@ import (
 	"time"
 )
 
+// Server implements to http.Handler interface to serve a photo gallery
 type Server struct {
 	Provider *Provider
 	Assets   http.FileSystem
 }
 
 const (
-	AlbumPath  = "/img/album.png"
-	ThumbWidth = 250
+	albumPath  = "/img/album.png"
+	thumbWidth = 250
 )
 
 func (s *Server) albumThumb(w http.ResponseWriter, r *http.Request, album *Album) {
-	content, err := s.Provider.CoverThumb(album, ThumbWidth)
+	content, err := s.Provider.CoverThumb(album, thumbWidth)
 	if err != nil {
 		log.Println(err)
-		content, err = s.assetThumb(AlbumPath)
+		content, err = s.assetThumb(albumPath)
 	}
 	if err != nil {
 		log.Println(err)
@@ -54,12 +55,12 @@ func isThumb(r *http.Request) bool {
 }
 
 func (s *Server) assetThumb(path string) (io.ReadSeeker, error) {
-	cacheName := ThumbName("assetthumb", ThumbWidth, path)
+	cacheName := ThumbName("assetthumb", thumbWidth, path)
 	image, err := s.Assets.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	return s.Provider.CachedThumb(cacheName, ThumbWidth, image)
+	return s.Provider.CachedThumb(cacheName, thumbWidth, image)
 }
 
 func (s *Server) image(w http.ResponseWriter, r *http.Request) {
@@ -76,9 +77,9 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 	}
 	var content io.ReadSeeker
 	if isThumb(r) {
-		content, err = s.Provider.ImageThumb(r.URL.Path, ThumbWidth)
+		content, err = s.Provider.ImageThumb(r.URL.Path, thumbWidth)
 		if err != nil {
-			content, err = s.assetThumb(AlbumPath)
+			content, err = s.assetThumb(albumPath)
 		}
 	} else {
 		content, err = s.Provider.ImageContent(r.URL.Path)

@@ -10,6 +10,8 @@ import (
 	as3 "github.com/aws/aws-sdk-go/service/s3"
 )
 
+// File implements the http.File interface for a S3 object or simulated
+// directory.
 type File struct {
 	fs      *Filesystem
 	path    string
@@ -38,6 +40,7 @@ func (f *File) download() error {
 	return nil
 }
 
+// Read reads from a downloaded S3 object as if it were a file
 func (f *File) Read(p []byte) (int, error) {
 	err := f.download()
 	if err != nil {
@@ -46,11 +49,13 @@ func (f *File) Read(p []byte) (int, error) {
 	return f.content.Read(p)
 }
 
+// Close closes and removes a downloaded S3 object
 func (f *File) Close() error {
 	f.content = nil
 	return nil
 }
 
+// Seek sets the offset for the next Read of a downloaded S3 object
 func (f *File) Seek(offset int64, whence int) (int64, error) {
 	err := f.download()
 	if err != nil {
@@ -59,6 +64,7 @@ func (f *File) Seek(offset int64, whence int) (int64, error) {
 	return f.content.Seek(offset, whence)
 }
 
+// Readdir returns the contents of a simulated directory of S3 objects
 func (f *File) Readdir(count int) ([]os.FileInfo, error) {
 	delimiter := "/"
 	input := as3.ListObjectsInput{
@@ -73,6 +79,7 @@ func (f *File) Readdir(count int) ([]os.FileInfo, error) {
 	return listObjectsToFileInfo(resp), nil
 }
 
+// Stat returns the FileInfo structure describing file.
 func (f *File) Stat() (os.FileInfo, error) {
 	delimiter := "/"
 	input := as3.ListObjectsInput{
