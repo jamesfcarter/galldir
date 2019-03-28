@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/disintegration/imaging"
 	cache "github.com/patrickmn/go-cache"
@@ -47,6 +48,16 @@ func (p *Provider) loadFile(path string) string {
 	return content
 }
 
+func (p *Provider) getDate(path string, modTime time.Time) time.Time {
+	if date := p.loadFile(filepath.Join(path, ".date")); date != "" {
+		t, err := time.Parse("2006-01-02 15:04:05", date)
+		if err == nil {
+			return t
+		}
+	}
+	return modTime
+}
+
 func (p *Provider) getName(path string) string {
 	if name := p.loadFile(filepath.Join(path, ".title")); name != "" {
 		return name
@@ -57,9 +68,13 @@ func (p *Provider) getName(path string) string {
 // Album retrieves an Album from the backend, or returns an error if
 // it is unable to.
 func (p *Provider) Album(path string) (*Album, error) {
+	if !strings.HasSuffix(path, "/") {
+		path = path + "/"
+	}
 	cacheName := CacheName("album", path)
 	cacheVal, cached := p.Cache.Get(cacheName)
 	if cached {
+		fmt.Println(cacheName)
 		return cacheVal.(*Album), nil
 	}
 	album, err := p.loadAlbum(path)
@@ -73,36 +88,42 @@ func (p *Provider) Album(path string) (*Album, error) {
 func (p *Provider) loadAlbum(path string) (*Album, error) {
 	albumFile, err := p.FS.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to open %s: %v", path, err)
 	}
 	fi, err := albumFile.Stat()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to stat %s: %v", path, err)
 	}
 	a := &Album{
 		Path: path,
 		Name: p.getName(path),
-		Time: fi.ModTime(),
+		Time: p.getDate(path, fi.ModTime()),
 	}
 	files, err := albumFile.Readdir(0)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to readdir %s: %v", path, err)
 	}
 	a.Images = make([]Image, 0, len(files))
 	for _, file := range files {
-		if !file.IsDir() && !IsImage(file.Name()) {
+		fileName := strings.TrimPrefix(file.Name(), strings.TrimPrefix(path, "/"))
+		if !file.IsDir() && !IsImage(fileName) {
 			continue
 		}
-		path := filepath.Join(path, file.Name())
+		path := filepath.Join(path, fileName)
 		a.Images = append(a.Images, Image{
 			Path: path,
 			Name: func() string {
 				if file.IsDir() {
 					return p.getName(path)
 				}
-				return file.Name()
+				return fileName
 			}(),
-			Time:    file.ModTime(),
+			Time: func() time.Time {
+				if file.IsDir() {
+					return p.getDate(path, fi.ModTime())
+				}
+				return file.ModTime()
+			}(),
 			IsAlbum: file.IsDir(),
 		})
 	}
@@ -122,13 +143,13 @@ func (p *Provider) ImageContent(path string) (io.ReadSeeker, error) {
 func (p *Provider) resizedImage(src io.ReadSeeker, width int, cacheName string) (io.ReadSeeker, error) {
 	im, _, err := image.Decode(src)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode image: %v", err)
 	}
 	thumb := imaging.Resize(im, width, 0, imaging.Lanczos)
 	buf := bytes.NewBuffer(nil)
 	err = jpeg.Encode(buf, thumb, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to encode image: %v", err)
 	}
 	jpgBytes := buf.Bytes()
 	p.Cache.Set(cacheName, jpgBytes, cache.DefaultExpiration)

@@ -16,7 +16,7 @@ type Server struct {
 
 const (
 	AlbumPath  = "/img/album.png"
-	ThumbWidth = 128
+	ThumbWidth = 250
 )
 
 func (s *Server) albumThumb(w http.ResponseWriter, r *http.Request, album *Album) {
@@ -66,7 +66,7 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 	albumPath := path.Dir(r.URL.Path)
 	album, err := s.Provider.Album(albumPath)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Failed to fetch album %s: %v\n", albumPath, err)
 		return
 	}
 	image := album.Image(r.URL.Path)
@@ -84,7 +84,7 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 		content, err = s.Provider.ImageContent(r.URL.Path)
 	}
 	if err != nil {
-		log.Println(err)
+		log.Printf("failed to serve image %s: %v\n", r.URL.Path, err)
 		return
 	}
 	http.ServeContent(w, r, image.Name, image.Time, content)
@@ -103,21 +103,20 @@ var indexTemplate = template.Must(template.New("index.html").Parse(`
     <head>
 	<title>{{ .Name }}</title>
 	<link type="text/css" rel="stylesheet" href="/css/lightgallery.css" />
+	<link type="text/css" rel="stylesheet" href="/css/galldir.css" />
     </head>
     <body>
 	<h1>{{ .Name }}</h1>
         <script src="/js/lightgallery.min.js"></script>
         <script src="/js/lg-thumbnail.min.js"></script>
         <script src="/js/lg-fullscreen.min.js"></script>
-	<div>
-	    <ul>
+	<div class="galldir-albums">
 	    {{ range .Albums }}
-		<li>
-		    <img src="{{ .Path }}?thumb=1" />
-		    <a href="{{ .Path }}">{{ .Name }}</a>
-		</li>
+		<figure><p><a href="{{ .Path }}">
+			<img src="{{ .Path }}?thumb=1" />
+			<figcaption>{{ .Name }}</figcaption>
+		</a></p></figure>
 	    {{ end }}
-	    </ul>
 	</div>
 	<div id="lightgallery">
 	{{ range .Photos }}

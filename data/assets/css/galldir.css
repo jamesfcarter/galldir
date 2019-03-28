@@ -1,0 +1,12 @@
+h1 {
+    text-align: center;
+}
+
+.galldir-albums figure {
+    width: 256px;
+    display: inline-block;
+    text-align: center;
+    border: 0px;
+    padding: 0px;
+    margin: 0px;
+}

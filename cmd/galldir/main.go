@@ -4,20 +4,29 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/jamesfcarter/galldir"
 	"github.com/jamesfcarter/galldir/data"
+	"github.com/jamesfcarter/galldir/s3"
 )
+
+func filesystem(dir string) http.FileSystem {
+	if strings.HasPrefix(dir, "https://s3.") {
+		return s3.New(dir)
+	}
+	return http.Dir(dir)
+}
 
 func main() {
 	dir := flag.String("dir", "", "Directory to serve")
 	addr := flag.String("addr", "", "Address to serve")
 	flag.Parse()
 
-	provider := galldir.NewProvider(http.Dir(*dir))
+	provider := galldir.NewProvider(filesystem(*dir))
 	server := &galldir.Server{
 		Provider: provider,
-		Assets: data.Assets,
+		Assets:   data.Assets,
 	}
 
 	assets := http.FileServer(data.Assets)
