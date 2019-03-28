@@ -22,7 +22,7 @@ by a text file called `.date` within the directory that contains the album's
 time in the format `YYY-MM-DD hh:mm:ss`. This is required when using S3 that
 does not have directories per se.
 
-![Galldir example album](http://jfc.org.uk/img/galldir-example.jpg)
+![Galldir example album](http://jfc.org.uk/img/galldir_example.jpg)
 
 ## Installation
 
