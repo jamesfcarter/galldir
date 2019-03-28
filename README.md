@@ -2,7 +2,7 @@
 
 # galldir
 
-![Galldir](./data/assets/img/icon.svg)
+![Galldir](./data/assets/img/album.png)
 
 The idea of this project is a photo gallery that is entirely driven from the
 filesystem - no databases, no image upload interfaces, (almost) no
