@@ -10,21 +10,21 @@ import (
 var testAlbum = &galldir.Album{
 	Path: "/",
 	Images: []galldir.Image{
-		galldir.Image{
+		{
 			Path:    "/foo",
 			Name:    "foo",
 			Time:    time.Unix(1234, 0),
 			IsAlbum: true,
 		},
-		galldir.Image{
+		{
 			Path: "/bar.jpg",
 			Name: "bar",
 		},
-		galldir.Image{
+		{
 			Path: "/baz.png",
 			Name: "baz",
 		},
-		galldir.Image{
+		{
 			Path:    "/qux",
 			Name:    "qux",
 			Time:    time.Unix(5678, 0),
