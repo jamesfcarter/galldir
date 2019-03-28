@@ -1,8 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/jamesfcarter/galldir)](https://goreportcard.com/report/github.com/jamesfcarter/galldir)
 
-# galldir
-
-![Galldir](./data/assets/img/album.png)
+# ![Galldir](./data/assets/img/favicon.ico) galldir
 
 The idea of this project is a photo gallery that is entirely driven from the
 filesystem - no databases, no image upload interfaces, (almost) no
