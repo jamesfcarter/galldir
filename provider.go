@@ -75,7 +75,6 @@ func (p *Provider) Album(path string) (*Album, error) {
 	cacheName := CacheName("album", path)
 	cacheVal, cached := p.Cache.Get(cacheName)
 	if cached {
-		fmt.Println(cacheName)
 		return cacheVal.(*Album), nil
 	}
 	album, err := p.loadAlbum(path)
