@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// go:generate go run assets_generate.go
+// Assets statically implements the virtual filesystem provided to vfsgen.
 var Assets = func() http.FileSystem {
 	fs := vfsgen۰FS{
 		"/": &vfsgen۰DirInfo{
