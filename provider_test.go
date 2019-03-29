@@ -37,7 +37,7 @@ func TestAlbum(t *testing.T) {
 	provider := galldir.NewProvider(http.Dir("testdata/album"))
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
-			album, err := provider.Album(tc.path)
+			album, err := provider.Album(tc.path, false)
 			if err == nil && tc.expectErr {
 				t.Fatal("expected an error")
 			}
@@ -172,7 +172,7 @@ func TestCoverThumb(t *testing.T) {
 	provider := galldir.NewProvider(http.Dir("testdata/album"))
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
-			album, err := provider.Album(tc.path)
+			album, err := provider.Album(tc.path, false)
 			if err != nil {
 				t.Fatal(err)
 			}

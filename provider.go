@@ -66,16 +66,18 @@ func (p *Provider) getName(path string) string {
 	return NameFromPath(path)
 }
 
-// Album retrieves an Album from the backend, or returns an error if
-// it is unable to.
-func (p *Provider) Album(path string) (*Album, error) {
+// Album retrieves a (possibly cached) Album from the backend, or returns an
+// error if it is unable to.
+func (p *Provider) Album(path string, refreshCache bool) (*Album, error) {
 	if !strings.HasSuffix(path, "/") {
 		path = path + "/"
 	}
 	cacheName := CacheName("album", path)
-	cacheVal, cached := p.Cache.Get(cacheName)
-	if cached {
-		return cacheVal.(*Album), nil
+	if !refreshCache {
+		cacheVal, cached := p.Cache.Get(cacheName)
+		if cached {
+			return cacheVal.(*Album), nil
+		}
 	}
 	album, err := p.loadAlbum(path)
 	if err != nil {

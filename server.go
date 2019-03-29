@@ -34,7 +34,8 @@ func (s *Server) albumThumb(w http.ResponseWriter, r *http.Request, album *Album
 }
 
 func (s *Server) album(w http.ResponseWriter, r *http.Request) {
-	album, err := s.Provider.Album(r.URL.Path)
+	refresh := cacheRefresh(r)
+	album, err := s.Provider.Album(r.URL.Path, refresh)
 	if err != nil {
 		log.Println(err)
 		return
@@ -43,15 +44,35 @@ func (s *Server) album(w http.ResponseWriter, r *http.Request) {
 		s.albumThumb(w, r, album)
 		return
 	}
-	err = indexTemplate.Execute(w, album)
+	page := struct {
+		Refresh template.URL
+		Album   *Album
+	}{
+		Refresh: func() template.URL {
+			if refresh {
+				return template.URL("&refresh=1")
+			}
+			return template.URL("")
+		}(),
+		Album: album,
+	}
+	err = indexTemplate.Execute(w, page)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
-func isThumb(r *http.Request) bool {
-	thumbParams, ok := r.URL.Query()["thumb"]
+func requestFlag(r *http.Request, flag string) bool {
+	thumbParams, ok := r.URL.Query()[flag]
 	return ok && len(thumbParams[0]) > 0
+}
+
+func cacheRefresh(r *http.Request) bool {
+	return requestFlag(r, "refresh")
+}
+
+func isThumb(r *http.Request) bool {
+	return requestFlag(r, "thumb")
 }
 
 func (s *Server) assetThumb(path string) (io.ReadSeeker, error) {
@@ -65,7 +86,7 @@ func (s *Server) assetThumb(path string) (io.ReadSeeker, error) {
 
 func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 	albumPath := path.Dir(r.URL.Path)
-	album, err := s.Provider.Album(albumPath)
+	album, err := s.Provider.Album(albumPath, false)
 	if err != nil {
 		log.Printf("Failed to fetch album %s: %v\n", albumPath, err)
 		return
@@ -102,25 +123,25 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 var indexTemplate = template.Must(template.New("index.html").Parse(`
 <html>
     <head>
-	<title>{{ .Name }}</title>
+	<title>{{ .Album.Name }}</title>
 	<link type="text/css" rel="stylesheet" href="/css/lightgallery.css" />
 	<link type="text/css" rel="stylesheet" href="/css/galldir.css" />
     </head>
     <body>
-	<h1>{{ .Name }}</h1>
+	<h1>{{ .Album.Name }}</h1>
         <script src="/js/lightgallery.min.js"></script>
         <script src="/js/lg-thumbnail.min.js"></script>
         <script src="/js/lg-fullscreen.min.js"></script>
 	<div class="galldir-albums">
-	    {{ range .Albums }}
+	    {{ range .Album.Albums }}
 		<figure><p><a href="{{ .Path }}">
-			<img src="{{ .Path }}?thumb=1" />
+			<img src="{{ .Path }}?thumb=1{{ $.Refresh }}" />
 			<figcaption>{{ .Name }}</figcaption>
 		</a></p></figure>
 	    {{ end }}
 	</div>
 	<div id="lightgallery">
-	{{ range .Photos }}
+	{{ range .Album.Photos }}
 	    <a href="{{ .Path }}"><img src="{{ .Path }}?thumb=1" /></a>
 	{{ end }}
 	</div>
