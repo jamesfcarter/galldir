@@ -142,12 +142,17 @@ func (p *Provider) ImageContent(path string) (io.ReadSeeker, error) {
 	return p.FS.Open(path)
 }
 
-func (p *Provider) resizedImage(src io.ReadSeeker, width int, cacheName string) (io.ReadSeeker, error) {
+func (p *Provider) resizedImage(src io.ReadSeeker, size int, cacheName string) (io.ReadSeeker, error) {
 	im, _, err := image.Decode(src)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode image: %v", err)
 	}
-	thumb := imaging.Resize(im, width, 0, imaging.Lanczos)
+	var thumb image.Image
+	if p := im.Bounds().Size(); p.X > p.Y {
+		thumb = imaging.Resize(im, size, 0, imaging.Lanczos)
+	} else {
+		thumb = imaging.Resize(im, 0, size, imaging.Lanczos)
+	}
 	buf := bytes.NewBuffer(nil)
 	err = jpeg.Encode(buf, thumb, nil)
 	if err != nil {
@@ -164,24 +169,24 @@ func CacheName(class, path string) string {
 }
 
 // ThumbName generates a unique key for a thumbname in the cache
-func ThumbName(class string, width int, path string) string {
-	return CacheName(fmt.Sprintf("%s%d", class, width), path)
+func ThumbName(class string, size int, path string) string {
+	return CacheName(fmt.Sprintf("%s%d", class, size), path)
 }
 
 // CachedThumb returns a (potentially cached) thumbnail of the supplied
 // source image
-func (p *Provider) CachedThumb(cacheName string, width int, src io.ReadSeeker) (io.ReadSeeker, error) {
+func (p *Provider) CachedThumb(cacheName string, size int, src io.ReadSeeker) (io.ReadSeeker, error) {
 	cachedImage, cached := p.Cache.Get(cacheName)
 	if cached {
 		return bytes.NewReader(cachedImage.([]byte)), nil
 	}
-	return p.resizedImage(src, width, cacheName)
+	return p.resizedImage(src, size, cacheName)
 }
 
 // ImageThumb returns a (potentially cached) thumbnail of the image
-// at the given path, scaled to the width.
-func (p *Provider) ImageThumb(path string, width int) (io.ReadSeeker, error) {
-	cacheName := ThumbName("thumb", width, path)
+// at the given path, scaled to the size.
+func (p *Provider) ImageThumb(path string, size int) (io.ReadSeeker, error) {
+	cacheName := ThumbName("thumb", size, path)
 	cachedImage, cached := p.Cache.Get(cacheName)
 	if cached {
 		return bytes.NewReader(cachedImage.([]byte)), nil
@@ -190,18 +195,18 @@ func (p *Provider) ImageThumb(path string, width int) (io.ReadSeeker, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.resizedImage(src, width, cacheName)
+	return p.resizedImage(src, size, cacheName)
 }
 
 // CoverThumb returns a (potentially cached) thumbnail of the album cover,
-// scaled to the width
-func (p *Provider) CoverThumb(album *Album, width int) (io.ReadSeeker, error) {
+// scaled to the size
+func (p *Provider) CoverThumb(album *Album, size int) (io.ReadSeeker, error) {
 	if cover := p.loadFile(filepath.Join(album.Path, ".cover")); cover != "" {
-		return p.ImageThumb(filepath.Join(album.Path, cover), width)
+		return p.ImageThumb(filepath.Join(album.Path, cover), size)
 	}
 	photos := album.Photos()
 	if len(photos) == 0 {
 		return nil, errors.New("no photo for cover " + album.Path)
 	}
-	return p.ImageThumb(photos[0].Path, width)
+	return p.ImageThumb(photos[0].Path, size)
 }
