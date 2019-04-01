@@ -203,10 +203,5 @@ func (p *Provider) CoverThumb(album *Album, width int) (io.ReadSeeker, error) {
 	if len(photos) == 0 {
 		return nil, errors.New("no photo for cover " + album.Path)
 	}
-	for i := range photos {
-		if strings.Contains(photos[i].Name, "star") {
-			return p.ImageThumb(photos[i].Path, width)
-		}
-	}
 	return p.ImageThumb(photos[0].Path, width)
 }
