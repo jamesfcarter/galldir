@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"strconv"
 	"time"
 )
 
@@ -16,15 +17,14 @@ type Server struct {
 }
 
 const (
-	albumPath  = "/img/album.png"
-	thumbWidth = 250
+	albumPath = "/img/album.png"
 )
 
-func (s *Server) albumThumb(w http.ResponseWriter, r *http.Request, album *Album) {
-	content, err := s.Provider.CoverThumb(album, thumbWidth)
+func (s *Server) albumThumb(w http.ResponseWriter, r *http.Request, album *Album, thumbSize int) {
+	content, err := s.Provider.CoverThumb(album, thumbSize)
 	if err != nil {
 		log.Println(err)
-		content, err = s.assetThumb(albumPath)
+		content, err = s.assetThumb(albumPath, thumbSize)
 	}
 	if err != nil {
 		log.Println(err)
@@ -40,8 +40,9 @@ func (s *Server) album(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	if isThumb(r) {
-		s.albumThumb(w, r, album)
+	thumbSize, needThumb := isThumb(r)
+	if needThumb {
+		s.albumThumb(w, r, album, thumbSize)
 		return
 	}
 	page := struct {
@@ -62,26 +63,35 @@ func (s *Server) album(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func requestFlag(r *http.Request, flag string) bool {
-	thumbParams, ok := r.URL.Query()[flag]
-	return ok && len(thumbParams[0]) > 0
+func requestParamInt(r *http.Request, flag string) (int, bool) {
+	thumbParams := r.URL.Query()
+	valueString := thumbParams.Get(flag)
+	if valueString == "" {
+		return 0, false
+	}
+	value, err := strconv.Atoi(valueString)
+	if err != nil {
+		return 0, false
+	}
+	return value, true
 }
 
 func cacheRefresh(r *http.Request) bool {
-	return requestFlag(r, "refresh")
+	_, ok := requestParamInt(r, "refresh")
+	return ok
 }
 
-func isThumb(r *http.Request) bool {
-	return requestFlag(r, "thumb")
+func isThumb(r *http.Request) (int, bool) {
+	return requestParamInt(r, "thumb")
 }
 
-func (s *Server) assetThumb(path string) (io.ReadSeeker, error) {
-	cacheName := ThumbName("assetthumb", thumbWidth, path)
+func (s *Server) assetThumb(path string, thumbSize int) (io.ReadSeeker, error) {
+	cacheName := ThumbName("assetthumb", thumbSize, path)
 	image, err := s.Assets.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	return s.Provider.CachedThumb(cacheName, thumbWidth, image)
+	return s.Provider.CachedThumb(cacheName, thumbSize, image)
 }
 
 func (s *Server) image(w http.ResponseWriter, r *http.Request) {
@@ -97,10 +107,11 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var content io.ReadSeeker
-	if isThumb(r) {
-		content, err = s.Provider.ImageThumb(r.URL.Path, thumbWidth)
+	thumbSize, needThumb := isThumb(r)
+	if needThumb {
+		content, err = s.Provider.ImageThumb(r.URL.Path, thumbSize)
 		if err != nil {
-			content, err = s.assetThumb(albumPath)
+			content, err = s.assetThumb(albumPath, thumbSize)
 		}
 	} else {
 		content, err = s.Provider.ImageContent(r.URL.Path)
@@ -135,14 +146,14 @@ var indexTemplate = template.Must(template.New("index.html").Parse(`
 	<div class="galldir-albums">
 	    {{ range .Album.Albums }}
 		<figure><p><a href="{{ .Path }}">
-			<img src="{{ .Path }}?thumb=1{{ $.Refresh }}" />
+			<img src="{{ .Path }}?thumb=250{{ $.Refresh }}" />
 			<figcaption>{{ .Name }}</figcaption>
 		</a></p></figure>
 	    {{ end }}
 	</div>
 	<div id="lightgallery">
 	{{ range .Album.Photos }}
-	    <a href="{{ .Path }}"><img src="{{ .Path }}?thumb=1" /></a>
+	    <a href="{{ .Path }}"><img src="{{ .Path }}?thumb=250" /></a>
 	{{ end }}
 	</div>
     	<script>
