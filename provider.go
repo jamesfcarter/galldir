@@ -12,24 +12,55 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/disintegration/imaging"
 	cache "github.com/patrickmn/go-cache"
 )
 
+const (
+	fileTimeout  = 1 * time.Hour
+	cachedImages = 64
+)
+
 // Provider is used to fetch Albums and Images from a Backend
 type Provider struct {
 	FS    http.FileSystem
 	Cache *cache.Cache
+	// ImageCacheEntries limits the number of cached full size images.
+	// This is done to limit the amount of memory consumed, but also puts
+	// an effective limit on the number of images that may be transferred
+	// concurrently.
+	ImageCacheEntries [cachedImages]struct {
+		sync.Mutex
+		Name string
+	}
 }
 
 // NewProvider returns an initialized Provider
 func NewProvider(backend http.FileSystem) *Provider {
+	c := cache.New(0, 0)
+	c.Set("imageIndex", uint(0), cache.NoExpiration)
 	return &Provider{
 		FS:    backend,
-		Cache: cache.New(0, 0),
+		Cache: c,
 	}
+}
+
+func (p *Provider) claimCacheEntry(cacheName string, f func() error) error {
+	index, err := p.Cache.IncrementUint("imageIndex", 1)
+	if err != nil {
+		panic(err)
+	}
+	index = index % cachedImages
+	p.ImageCacheEntries[index].Lock()
+	defer p.ImageCacheEntries[index].Unlock()
+	if p.ImageCacheEntries[index].Name != "" {
+		p.Cache.Delete(p.ImageCacheEntries[index].Name)
+	}
+	p.ImageCacheEntries[index].Name = cacheName
+	return f()
 }
 
 func (p *Provider) loadFile(path string) string {
@@ -45,7 +76,7 @@ func (p *Provider) loadFile(path string) string {
 		content = string(contentBytes)
 	}
 	content = strings.TrimSuffix(content, "\n")
-	p.Cache.Set(cacheName, content, cache.DefaultExpiration)
+	p.Cache.Set(cacheName, content, fileTimeout)
 	return content
 }
 
@@ -83,7 +114,7 @@ func (p *Provider) Album(path string, refreshCache bool) (*Album, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.Cache.Set(cacheName, album, cache.DefaultExpiration)
+	p.Cache.SetDefault(cacheName, album)
 	return album, nil
 }
 
@@ -133,13 +164,34 @@ func (p *Provider) loadAlbum(path string) (*Album, error) {
 }
 
 // ImageContent returns an io.ReadSeeker for an image stored in the backend
-// at the given path. Any attempt to read anything other than an image will
-// result in an error.
+// at the given path (that may have been cached). Any attempt to read
+// anything other than an image will result in an error.
 func (p *Provider) ImageContent(path string) (io.ReadSeeker, error) {
 	if !IsImage(path) {
 		return nil, errors.New("not an image")
 	}
-	return p.FS.Open(path)
+	cacheName := CacheName("image", path)
+	cachedImage, cached := p.Cache.Get(cacheName)
+	if cached {
+		return bytes.NewReader(cachedImage.([]byte)), nil
+	}
+	var image []byte
+	err := p.claimCacheEntry(cacheName, func() error {
+		src, err := p.FS.Open(path)
+		if err != nil {
+			return err
+		}
+		image, err = ioutil.ReadAll(src)
+		if err != nil {
+			return err
+		}
+		p.Cache.SetDefault(cacheName, image)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(image), nil
 }
 
 func (p *Provider) resizedImage(src io.ReadSeeker, size int, cacheName string) (io.ReadSeeker, error) {
@@ -159,7 +211,7 @@ func (p *Provider) resizedImage(src io.ReadSeeker, size int, cacheName string) (
 		return nil, fmt.Errorf("failed to encode image: %v", err)
 	}
 	jpgBytes := buf.Bytes()
-	p.Cache.Set(cacheName, jpgBytes, cache.DefaultExpiration)
+	p.Cache.SetDefault(cacheName, jpgBytes)
 	return bytes.NewReader(jpgBytes), nil
 }
 
