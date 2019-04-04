@@ -71,6 +71,8 @@ func TestAlbum(t *testing.T) {
 }
 
 func testHash(t *testing.T, r io.Reader, expected string) {
+	t.Helper()
+
 	if expected == "" {
 		return
 	}

@@ -57,6 +57,8 @@ func TestImage(t *testing.T) {
 }
 
 func testImages(t *testing.T, result []galldir.Image, name []string) {
+	t.Helper()
+
 	if count := len(result); count != len(name) {
 		t.Fatalf("unexpected number of results: %d", count)
 	}
