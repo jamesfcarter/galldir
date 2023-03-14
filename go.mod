@@ -7,5 +7,5 @@ require (
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/jamesfcarter/s3httpfilesystem v0.0.0-20230103202810-eb62dfdc7db7
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f // indirect
+	golang.org/x/image v0.6.0 // indirect
 )
